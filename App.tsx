@@ -1,10 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Button, Image } from 'react-native';
-import {useReducer, useState} from 'react';
+import { useReducer, useState } from 'react';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import{
+import {
   initializeAuth,
   getAuth,
   createUserWithEmailAndPassword,
@@ -12,7 +12,7 @@ import{
   onAuthStateChanged,
   UserCredential,
   getReactNativePersistence
-}from 'firebase/auth';
+} from 'firebase/auth';
 import {
   getFirestore,
   collection,
@@ -23,13 +23,12 @@ import {
 } from 'firebase/firestore';
 import {
   getStorage,
-  ref,getDownloadURL
+  ref,
+  getDownloadURL
 } from 'firebase/storage';
 import Navigation from './Navigaton';
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
+
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
@@ -39,48 +38,42 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_APP_ID
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const storage = getStorage(app);
-//const auth = getAuth(app);
 const db = getFirestore(app);
-const auth = initializeAuth(
-  app,
-  {persistence: getReactNativePersistence(ReactNativeAsyncStorage)}
-);
-
+const auth = initializeAuth(app, { persistence: getReactNativePersistence(ReactNativeAsyncStorage) });
 
 export default function AppNavigation() {
-  return(
-    <Navigation/>
+  return (
+    <Navigation />
   );
 }
-export function App() {
-  const[email,setEmail] = useState("");
-  const[password, setPassword] = useState("");
-  const[name, setName] = useState("");
-  const[breed, setBreed] = useState("");
-  const [imageURL, setImageURL] = useState("");
-  //target - get image uRL from firebase to display it
-  //op1 - use a simple route from bucket
 
+export function App() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [breed, setBreed] = useState("");
+  const [imageURL, setImageURL] = useState("");
+
+ 
   var puppyRef = ref(storage, "gs://ad2024-501-js.appspot.com/perros/golden.jpg");
 
-
-  getDownloadURL(puppyRef).then(url =>{
+  getDownloadURL(puppyRef).then(url => {
     console.log(url);
     setImageURL(url);
-  }).catch(error =>{
+  }).catch(error => {
     console.log(error.code);
   });
 
-  onAuthStateChanged(auth, user=>{
-    if(user){
+  onAuthStateChanged(auth, user => {
+    if (user) {
       console.log("The user is validated: " + user.email);
-    }else{
+    } else {
       console.log("Logged out");
     }
-    });
+  });
 
   return (
     <View style={styles.container}>
@@ -94,106 +87,116 @@ export function App() {
       />
       <TextInput
         placeholder='password'
-        secureTextEntry = {true}
+        secureTextEntry={true}
         onChangeText={text => {
           setPassword(text)
         }}
       />
       <Button
-        title = "sign up"
-        onPress={()=>{
-          createUserWithEmailAndPassword(auth, email, password).then((userCredential : UserCredential)=>{
+        title="sign up"
+        onPress={() => {
+          createUserWithEmailAndPassword(auth, email, password).then((userCredential: UserCredential) => {
             console.log("USER: " + userCredential.user)
-          }).catch((error: any)=>{
-            if(error.code == "auth/weak-password"){
+          }).catch((error: any) => {
+            if (error.code == "auth/weak-password") {
               alert("The password is insecure!");
             }
             console.log("ERROR: " + error.message + " " + error.code);
           });
         }}
       />
-        <Button
-        title = "log in"
-        onPress={()=>{
-          signInWithEmailAndPassword(auth,email,password)
-          .then((userCredential : UserCredential)=>{
-            console.log(userCredential.user.email);
-          })
-          .catch((error: any)=>{
-            console.log("ERROR: " + error.message + "  + error.code");
-          });
+      <Button
+        title="log in"
+        onPress={() => {
+          signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential: UserCredential) => {
+              console.log(userCredential.user.email);
+            })
+            .catch((error: any) => {
+              console.log("ERROR: " + error.message + "  + error.code");
+            });
         }}
       />
       <Button
-        title = "log out"
-        onPress={()=>{
+        title="log out"
+        onPress={() => {
           console.log("LOGGING OUT");
           auth.signOut();
         }}
       />
-            <TextInput
-        placeholder = "name"
-        onChangeText={text=>{
+      <TextInput
+        placeholder="name"
+        onChangeText={text => {
           setName(text);
         }}
       />
-            <TextInput
-        placeholder = "breed"
-        onChangeText={text=>{
+      <TextInput
+        placeholder="breed"
+        onChangeText={text => {
           setBreed(text);
         }}
       />
       <Button
-        title = "add"
-        onPress={async ()=>{
-         try{
+        title="add"
+        onPress={async () => {
+          try {
+            var perritosCollection = collection(db, "perritos");
 
-          var perritosCollection = collection(db,"perritos");
-
-          const newDoc = await addDoc(
-            perritosCollection,
-            {
-              name: name,
-              breed: breed
-            }
-          );
-          console.log("ID of new perritos: "+ newDoc.id);
-         }catch(e){
-          console.log("EXCEPTION WHEN TRYING TO ADD AN ANIMAL: " + e)
-         }
+            const newDoc = await addDoc(
+              perritosCollection,
+              {
+                name: name,
+                breed: breed
+              }
+            );
+            console.log("ID of new perritos: " + newDoc.id);
+          } catch (e) {
+            console.log("EXCEPTION WHEN TRYING TO ADD AN ANIMAL: " + e)
+          }
         }}
       />
       <Button
-        title = "get all"
-        onPress={async()=>{
-          
+        title="get all"
+        onPress={async () => {
           var snapshot = await getDocs(collection(db, "perritos"));
-          snapshot.forEach(currentDocument =>{
+          snapshot.forEach(currentDocument => {
             console.log(currentDocument.data());
           });
         }}
       />
-
       <Button
-        title = "query"
-        onPress={async ()=>{
-          const perritos = collection(db ,'perritos');
-          const q = query(perritos, where("breed","==","Labrador"));
+        title="query"
+        onPress={async () => {
+          const perritos = collection(db, 'perritos');
+          const q = query(perritos, where("breed", "==", "Labrador"));
           const snapshot = await getDocs(q);
-          snapshot.forEach(currentDocument =>{
+          snapshot.forEach(currentDocument => {
             console.log(currentDocument.data());
           });
         }}
       />
       {
         imageURL != "" ?
-        <Image
-        source = {{uri:imageURL}}
-        style = {{width: 100, height: 100}}
-        />
-        :
-        <Text>Loading Image ...</Text>
+          <Image
+            source={{ uri: imageURL }}
+            style={{ width: 100, height: 100 }}
+          />
+          :
+          <Text>Loading Image ...</Text>
       }
+    </View>
+  );
+}
+
+
+export function AnimalDetailView({ route }) {
+  const { animal } = route.params;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{animal.name}</Text>
+      <Text style={styles.text}>Age: {animal.age}</Text>
+      <Image source={{ uri: animal.imageUrl }} style={styles.image} />
     </View>
   );
 }
@@ -205,4 +208,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  text: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  image: {
+    width: 200,
+    height: 200,
+    borderRadius: 10,
+  },
 });
+
